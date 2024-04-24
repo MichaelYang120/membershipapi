@@ -1,34 +1,22 @@
 import express, { Express, Request, Response, Router } from "express";
 import dotenv from "dotenv";
-import { MongoClient, ServerApiVersion } from 'mongodb';
+import { MongoClient, ServerApiVersion} from 'mongodb';
+// import * as mongoDB from "mongodb";
+
 
 dotenv.config();
+const uri = process.env.ATLAS_URI || "";
 
-const app: Express = express();
-const port = process.env.PORT || 3000;
-const uri = process.env.ATLAS_URI || ''; 
-
-app.get("/", (req: Request, res: Response) => {
-  res.send("Express + TypeScript Server");
-});
-
-const client = new MongoClient(uri, {
-  serverApi: {
-    version: ServerApiVersion.v1,
-    strict: true,
-    deprecationErrors: true,
-  }
-});
-
+const client = new MongoClient(uri);
 async function run() {
   try {
-    // Connect the client to the server	(optional starting in v4.7)
     await client.connect();
-    // Send a ping to confirm a successful connection
-    await client.db("admin").command({ ping: 1 });
-    console.log("Pinged your deployment. You successfully connected to MongoDB!");
+    // database and collection code goes here
+    // insert code goes here
+    // display the results of your operation
+	console.log("Connected to the database");
   } catch (e) {
-	console.error(e);
+	  console.log("Error connecting to the database: ", e);
   } finally {
     // Ensures that the client will close when you finish/error
     await client.close();
@@ -36,7 +24,3 @@ async function run() {
 }
 
 run().catch(console.dir);
-
-app.listen(port, () => {
-  console.log(`[server]: Server is running at http://localhost:${port}`);
-});
