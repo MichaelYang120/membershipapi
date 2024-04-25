@@ -60,8 +60,12 @@ class MembershipStore {
 			status: status,
 		};
 
-		console.log(`Document: ${JSON.stringify(document)}`);
+		// console.log(`Document: ${JSON.stringify(document)}`);
 		// console.log values not in the document
+		let isChecked = this.checkValidEntries(this.data, document);
+		if(isChecked instanceof Error) {
+			return isChecked;
+		}
 		return document;
 
 	}
@@ -82,11 +86,23 @@ class MembershipStore {
 		if(this.data.status === undefined) {
 			return new Error("Invalid MembershipStore");
 		}
-		let isChecked = this.checkValidEntries(this.data);
-		if(isChecked instanceof Error) {
-			return isChecked;
-		}
 
 	}
 
+	checkValidEntries(data: object, document: any) {
+		const tmpdata:any = this.data;
+		console.log(`Data: ${JSON.stringify(data)}`);
+		// if key is not in MembershipStore
+		if(!data || !document) {
+			return new Error("Invalid MembershipStore");
+		}
+		// see if data is in document
+		for(let key in tmpdata) {
+			// verify key that is not in the document and failing the request
+			if(document[key] !== tmpdata[key] && key !== "_id" && key !== "date") {
+				console.log(`Key: ${key}`);
+				return new Error("Invalid MembershipStore");
+			}
+		}
+	}
 }
