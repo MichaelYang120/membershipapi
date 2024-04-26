@@ -13,4 +13,5 @@ app.listen(port, () => {
 	console.log(`Server is running on port ${port}`);
 });
 
+//notes: this is a testing api, if this cannot connect to the database, it will throw an error, if so check mongodb atlas and add current ip address
 app.use("/membership", membership);

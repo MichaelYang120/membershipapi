@@ -1,13 +1,14 @@
 import express from 'express';
 import db from '../db/connection';
-import  mongodb from 'mongodb';
+import { ObjectId } from 'mongodb';
 
 const router = express.Router();
+const collectionName = "membership_store";
 
 // get membership store
 router.get('/', async (req, res) => {
 	// collection name
-	let collection = await db.collection("membership_store");
+	let collection = await db.collection(collectionName);
 	let results = await collection.find({})
 		.limit(50)
 		.toArray();
@@ -17,7 +18,7 @@ router.get('/', async (req, res) => {
 // create new membership store
 router.post("/", async (req, res) => {
 	let util = require('util');
-	let collection = await db.collection("membership_store");
+	let collection = await db.collection(collectionName);
 	let newDocument = new MembershipStore(req.body).generatingDocument();
 	if(newDocument instanceof Error) {
 		console.log(`Error: ${util.inspect(newDocument)}`);
@@ -25,6 +26,45 @@ router.post("/", async (req, res) => {
 	}
 	let result = await collection.insertOne(newDocument);
 	res.send(result).status(204);
+});
+
+// Get a single membership store
+router.get("/:id", async (req, res) => {
+	let collection = await db.collection(collectionName);
+	let query = {_id: new ObjectId(req.params.id)};
+	let result = await collection.findOne(query);
+	if (!result) res.status(404).send(`No document with id ${req.params.id} was found`);
+	else res.send(result).status(200);
+});
+
+// Delete an membership store
+router.delete("/:id", async (req, res) => {
+	const query = { _id: new ObjectId(req.params.id) };
+	const collection = db.collection(collectionName);
+	let result = await collection.deleteOne(query);
+	res.send(result).status(200);
+});
+
+// patch, sending a comment to the membership store
+router.patch("/comment/:id", async (req, res) => {
+	const query = { _id:new ObjectId(req.params.id) };
+	const updates = {
+		$push: { comments: req.body }
+	};
+	let collection = await db.collection(collectionName);
+	let result = await collection.updateOne(query, updates);
+	res.send(result).status(200);
+});
+
+// put, update a membership store
+router.put("/:id", async (req, res) => {
+	const query = { _id: new ObjectId(req.params.id) };
+	const updates = {
+		$set: req.body
+	};
+	let collection = await db.collection(collectionName);
+	let result = await collection.updateOne(query, updates);
+	res.send(result).status(200);
 });
 
 export default router;
@@ -96,13 +136,19 @@ class MembershipStore {
 		if(!data || !document) {
 			return new Error("Invalid MembershipStore");
 		}
+		let tmpkey:string = "";
 		// see if data is in document
 		for(let key in tmpdata) {
 			// verify key that is not in the document and failing the request
 			if(document[key] !== tmpdata[key] && key !== "_id" && key !== "date") {
 				console.log(`Key: ${key}`);
-				return new Error("Invalid MembershipStore");
+				tmpkey = key;
+				break;
 			}
+		}
+
+		if(tmpkey !== "") {
+			return new Error(`Invalid key: ${tmpkey}`);
 		}
 	}
 }
