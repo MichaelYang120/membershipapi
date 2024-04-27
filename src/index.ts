@@ -2,6 +2,7 @@ import express from 'express';
 import env from 'dotenv';
 import membership from './routes/membership';
 import plan from './routes/plan';
+import subscription from './routes/subscription';
 
 env.config();
 const port = process.env.PORT || 3000;
@@ -21,3 +22,4 @@ app.listen(port, () => {
 //notes: this is a testing api, if this cannot connect to the database, it will throw an error, if so check mongodb atlas and add current ip address
 app.use("/membership", membership);
 app.use("/plan", plan);
+app.use("/subscription", subscription);

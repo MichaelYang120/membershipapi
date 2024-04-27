@@ -5,7 +5,22 @@ import { ObjectId } from 'mongodb';
 const router = express.Router();
 // headers should be like this
 // example: membershipid: storeid, membershipkey: admin
-//
+
+// example of curl call
+//curl --location 'http://localhost:4000/plan/create' \
+//--header 'membershipKey: admin' \
+//--header 'membershipId: 662c848b9276a793dc1eb4cd' \
+//--header 'Content-Type: application/json' \
+//--data '{
+//"name":"test plan 1",
+//"description":"test plan 1",
+//"price":"data.price,",
+//"type":"recurring",
+//"billingcycle":"monthly",
+//"duedate":"0.00",
+//"createDate":"",
+//"modifyDate":""
+//}'
 
 let debug = true;
 // debug = false;
@@ -255,7 +270,7 @@ class Plan {
 			}
 		}
 
-		if(tmpkey !== "" && tmpkey !== "storeid") {
+		if(tmpkey !== "" && tmpkey !== "storeid" && tmpkey !== "createDate" && tmpkey !== "modifyDate") {
 			return new Error(`Invalid key: ${tmpkey}`);
 		}
 		return false;
@@ -293,5 +308,5 @@ const getStoreId = (headers: any):string => {
 }
 
 const getCollectionName = (storeid: string):string => {
-	return storeid + '_plans';
+	return `plan_${storeid}`;
 }
