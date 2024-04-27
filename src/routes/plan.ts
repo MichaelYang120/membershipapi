@@ -33,6 +33,132 @@ router.post('/create', async (req, res) => {
 
 });
 
+// get plans
+router.get('/', async (req, res) => {
+	let headers = req.headers;
+	let error:boolean|Error = false;
+	error = verifyHeaders(headers);
+	if(error instanceof Error || error) {
+		return res.status(400).send("Error invalid headers");
+	}
+	let storeid:string = getStoreId(headers);
+	error = verifyStoreId(storeid);
+	if(error instanceof Error || error) {
+		return res.status(400).send("Error invalid storeid");
+	}
+	let collectionName:string = getCollectionName(storeid);
+	let collection = await db.collection(collectionName);
+	let results = await collection.find({})
+		.limit(50)
+		.toArray();
+	res.send(results).status(200);
+})
+
+// get a single plan
+router.get('/:id', async (req, res) => {
+	let headers = req.headers;
+	let error:boolean|Error = false;
+	error = verifyHeaders(headers);
+	if(error instanceof Error || error) {
+		return res.status(400).send("Error invalid headers");
+	}
+	let storeid:string = getStoreId(headers);
+	error = verifyStoreId(storeid);
+	if(error instanceof Error || error) {
+		return res.status(400).send("Error invalid storeid");
+	}
+	let collectionName:string = getCollectionName(storeid);
+	let collection = await db.collection(collectionName);
+	let query = {_id: new ObjectId(req.params.id)};
+	let result = await collection.findOne(query);
+	if(!result) {
+		return res.status(404).send("Plan not found");
+	}
+	res.send(result).status(200);
+});
+
+// delete a plan
+router.delete('/:id', async (req, res) => {
+	let headers = req.headers;
+	let error:boolean|Error = false;
+	error = verifyHeaders(headers);
+	if(error instanceof Error || error) {
+		return res.status(400).send("Error invalid headers");
+	}
+	let storeid:string = getStoreId(headers);
+	error = verifyStoreId(storeid);
+	if(error instanceof Error || error) {
+		return res.status(400).send("Error invalid storeid");
+	}
+	let collectionName:string = getCollectionName(storeid);
+	let collection = await db.collection(collectionName);
+	let query = {_id: new ObjectId(req.params.id)};
+	let result = await collection.deleteOne(query);
+	if(!result) {
+		return res.status(404).send("Plan not found");
+	}
+	res.send(result).status(204);
+});
+
+// put, update a plan
+router.put('/:id', async (req, res) => {
+	let headers = req.headers;
+	let error:boolean|Error = false;
+	error = verifyHeaders(headers);
+	if(error instanceof Error || error) {
+		return res.status(400).send("Error invalid headers");
+	}
+	let storeid:string = getStoreId(headers);
+	error = verifyStoreId(storeid);
+	if(error instanceof Error || error) {
+		return res.status(400).send("Error invalid storeid");
+	}
+	let collectionName:string = getCollectionName(storeid);
+	let collection = await db.collection(collectionName);
+	let query = {_id: new ObjectId(req.params.id)};
+	if(req.body.createDate) {
+		delete req.body.createDate;
+	}
+	if(req.body.modifyDate) {
+		req.body.modifyDate = new Date();
+	}
+	let updates = {
+		$set: req.body
+	};
+//	console.log(req.body);
+	let result = await collection.updateOne(query, updates);
+	if(!result) {
+		return res.status(404).send("Plan not found");
+	}
+	res.send(result).status(204);
+});
+
+// patch, sending a comment to the plan
+router.patch('/comment/:id', async (req, res) => {
+	let headers = req.headers;
+	let error:boolean|Error = false;
+	error = verifyHeaders(headers);
+	if(error instanceof Error || error) {
+		return res.status(400).send("Error invalid headers");
+	}
+	let storeid:string = getStoreId(headers);
+	error = verifyStoreId(storeid);
+	if(error instanceof Error || error) {
+		return res.status(400).send("Error invalid storeid");
+	}
+	let collectionName:string = getCollectionName(storeid);
+	let collection = await db.collection(collectionName);
+	let query = {_id: new ObjectId(req.params.id)};
+	const updates = {
+		$push: { comments: req.body }
+	};
+	let result = await collection.updateOne(query, updates);
+	if(!result) {
+		return res.status(404).send("Plan not found");
+	}
+	res.send(result).status(204);
+});
+
 export default router;
 
 interface Plan {
