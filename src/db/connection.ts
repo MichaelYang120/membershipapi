@@ -5,10 +5,14 @@ import { MongoClient } from 'mongodb';
 
 dotenv.config();
 const uri = process.env.ATLAS_URI || "";
+let debug = true;
+//debug = false;
 
 const client = new MongoClient(uri);
 async function run() {
-	console.log(uri);
+	if(debug) {
+		console.log("uri: ", uri);
+	}
 	try {
 		await client.connect();
 		// database and collection code goes here
@@ -16,8 +20,10 @@ async function run() {
 		// display the results of your operation
 		// Send a ping to confirm a successful connection
 		await client.db("admin").command({ ping: 1 });
-		console.log("Pinged your deployment. You successfully connected to MongoDB!");
-		console.log("Connected to the database");
+		if(debug) {
+			console.log("Pinged your deployment. You successfully connected to MongoDB!");
+			console.log("Connected to the database");
+		}
 	} catch (e) {
 	  console.log("Error connecting to the database: ", e);
 	} finally {
