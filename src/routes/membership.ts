@@ -1,12 +1,25 @@
 import express from 'express';
 import db from '../db/connection';
 import { ObjectId } from 'mongodb';
-
 const router = express.Router();
 const collectionName = "membership_store";
 
+// headers should be set to membershipid and membershipkey
+// example: membershipid: admin, membershipkey: admin
+
+let debug = true;
+debug = false;
 // get membership store
 router.get('/', async (req, res) => {
+	let headers = req.headers;
+	let error = verifyHeaders(headers);
+	if(error instanceof Error) {
+		return res.status(400).send(error.message);
+	}
+	if(debug) {
+		console.log(`Headers: ${JSON.stringify(headers)}`);
+
+	}
 	// collection name
 	let collection = await db.collection(collectionName);
 	let results = await collection.find({})
@@ -17,11 +30,20 @@ router.get('/', async (req, res) => {
 
 // create new membership store
 router.post("/", async (req, res) => {
+	let headers = req.headers;
+	let error = verifyHeaders(headers);
+	if(error instanceof Error) {
+		return res.status(400).send(error.message);
+	}
 	let util = require('util');
 	let collection = await db.collection(collectionName);
 	let newDocument = new MembershipStore(req.body).generatingDocument();
 	if(newDocument instanceof Error) {
-		console.log(`Error: ${util.inspect(newDocument)}`);
+
+		if(debug) {
+			console.log(`Error: ${util.inspect(newDocument)}`);
+		}
+
 		return res.status(400).send(newDocument.message);
 	}
 	let result = await collection.insertOne(newDocument);
@@ -30,6 +52,11 @@ router.post("/", async (req, res) => {
 
 // Get a single membership store
 router.get("/:id", async (req, res) => {
+	let headers = req.headers;
+	let error = verifyHeaders(headers);
+	if(error instanceof Error) {
+		return res.status(400).send(error.message);
+	}
 	let collection = await db.collection(collectionName);
 	let query = {_id: new ObjectId(req.params.id)};
 	let result = await collection.findOne(query);
@@ -39,6 +66,11 @@ router.get("/:id", async (req, res) => {
 
 // Delete an membership store
 router.delete("/:id", async (req, res) => {
+	let headers = req.headers;
+	let error = verifyHeaders(headers);
+	if(error instanceof Error) {
+		return res.status(400).send(error.message);
+	}
 	const query = { _id: new ObjectId(req.params.id) };
 	const collection = db.collection(collectionName);
 	let result = await collection.deleteOne(query);
@@ -47,6 +79,11 @@ router.delete("/:id", async (req, res) => {
 
 // patch, sending a comment to the membership store
 router.patch("/comment/:id", async (req, res) => {
+	let headers = req.headers;
+	let error = verifyHeaders(headers);
+	if(error instanceof Error) {
+		return res.status(400).send(error.message);
+	}
 	const query = { _id:new ObjectId(req.params.id) };
 	const updates = {
 		$push: { comments: req.body }
@@ -58,6 +95,11 @@ router.patch("/comment/:id", async (req, res) => {
 
 // put, update a membership store
 router.put("/:id", async (req, res) => {
+	let headers = req.headers;
+	let error = verifyHeaders(headers);
+	if(error instanceof Error) {
+		return res.status(400).send(error.message);
+	}
 	const query = { _id: new ObjectId(req.params.id) };
 	const updates = {
 		$set: req.body
@@ -112,26 +154,29 @@ class MembershipStore {
 	// fail req that is not a MembershipStore
 	checkValues() {
 		if(this.data === undefined) {
-			return new Error("Invalid MembershipStore");
+			return new Error(`Please enter a valid MembershipStore`);
 		}
 		if(this.data.storeName === undefined) {
-			return new Error("Invalid MembershipStore");
+			return new Error(`Invalid MembershipStore: ${this.data.storeName}`);
 		}
 		if(this.data.storeType === undefined) {
-			return new Error("Invalid MembershipStore");
+			return new Error(`Invalid MembershipStore: ${this.data.storeType}`);
 		}
 		if(this.data.date === undefined) {
-			return new Error("Invalid MembershipStore");
+			return new Error(`Invalid MembershipStore: ${this.data.date}`);
 		}
 		if(this.data.status === undefined) {
-			return new Error("Invalid MembershipStore");
+			return new Error(`Invalid MembershipStore: ${this.data.status}`);
 		}
 
 	}
 
 	checkValidEntries(data: object, document: any) {
 		const tmpdata:any = this.data;
-		console.log(`Data: ${JSON.stringify(data)}`);
+		if(debug) {
+			console.log(`Data: ${JSON.stringify(data)}`);
+
+		}
 		// if key is not in MembershipStore
 		if(!data || !document) {
 			return new Error("Invalid MembershipStore");
@@ -141,7 +186,11 @@ class MembershipStore {
 		for(let key in tmpdata) {
 			// verify key that is not in the document and failing the request
 			if(document[key] !== tmpdata[key] && key !== "_id" && key !== "date") {
-				console.log(`Key: ${key}`);
+
+				if(debug) {
+					console.log(`Key: ${key}`);
+				}
+				
 				tmpkey = key;
 				break;
 			}
@@ -150,5 +199,27 @@ class MembershipStore {
 		if(tmpkey !== "") {
 			return new Error(`Invalid key: ${tmpkey}`);
 		}
+	}
+}
+
+// admin headers verification
+const verifyHeaders = (headers: any) => {
+	if(debug) {
+
+		console.log(`Headers: ${JSON.stringify(headers)}`);
+	}
+	if(headers.membershipid === undefined) {
+
+		if(debug) {
+			console.log(headers.membershipid);
+		}
+		return new Error("Invalid headers");
+	}
+	if(headers.membershipkey !== "admin") {
+		
+		if(debug) {
+			console.log(headers.membershipkey);
+		}
+		return new Error("Invalid headers");
 	}
 }
