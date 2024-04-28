@@ -30,10 +30,11 @@ let debug = true;
 //    "exp":"exp",
 //    "routingnumber":"routingnumber",
 //    "accountnumber":"accountnumber",
-//    "createdDate":"createdDate",
-//    "updatedDate":"updatedDate",
 //    "subscriptionstatus":"subscriptionstatus"
 //}'
+
+
+// there are no delete for this api as we want to keep records of who has been joining the subscription service, we can always cancel the subscription, or freeze it, but we want to keep the record of who has been a member of the subscription service and when they joined
 
 router.post("/create", async (req, res) => {
 	let error:boolean|Error = false;
@@ -60,7 +61,7 @@ router.post("/create", async (req, res) => {
 	let util = require('util');
 	collectionName = getCollectionName(headers);
 	let collection = await db.collection(collectionName);
-	let newDocument = new Subscription(req.body, storeid).generatingDocument();
+	let newDocument = new Subscription(req.body, storeid, "post").generatingDocument();
 	if(newDocument instanceof Error) {
 		if(debug) {
 			console.log(`Error: ${util.inspect(newDocument)}`);
@@ -68,6 +69,50 @@ router.post("/create", async (req, res) => {
 		return res.status(400).send(newDocument.message);
 	}
 	let result = await collection.insertOne(newDocument);
+	res.send(result).status(204);
+});
+
+router.put("/update/:id", async (req, res) => {
+	let error:boolean|Error = false;
+	let headers = req.headers;
+	if(!headers.storeid) {
+		return res.status(400).send("storeid is required");
+	}
+	error = verifyHeaders(headers);
+	if(error instanceof Error) {
+		return res.status(400).send(error.message);
+	}
+
+	let storeid:any = headers.storeid;
+	error = await verifyValidStore(storeid);
+	if(error instanceof Error) {
+		return res.status(400).send(error.message);
+	}
+	error = await verifyValidPlan(storeid, req.body.planid);
+	if(error instanceof Error) {
+		return res;
+	}
+
+	let collectionName:string|Error = "";
+	let util = require('util');
+	collectionName = getCollectionName(headers);
+	let collection = await db.collection(collectionName);
+	let query = {_id: new ObjectId(req.params.id)};
+	// get current document
+	let currentDocument = await collection.findOne(query);
+	if(!currentDocument) {
+		return res.status(404).send("Document not found");
+	}
+	let currentCreatedDate:Date = currentDocument.createdDate;
+
+	let newDocument = new Subscription(req.body, storeid, "put", currentCreatedDate).generatingDocument();
+	if(newDocument instanceof Error) {
+		if(debug) {
+			console.log(`Error: ${util.inspect(newDocument)}`);
+		}
+		return res.status(400).send(newDocument.message);
+	}
+	let result = await collection.updateOne(query, {$set: newDocument});
 	res.send(result).status(204);
 });
 
@@ -98,13 +143,6 @@ const verifyValidStore = async (storeid:string) => {
 }
 
 const verifyValidPlan = async (storeid:string, planid:string) => {
-//	let collection = await db.collection("plan_" + storeid);
-//	let results = await collection.find({planid: planid})
-//		.limit(1)
-//		.toArray();
-//	if(results.length === 0) {
-//		return new Error("planid is not valid");
-//	}
 	let collection = db.collection("plan_" + storeid);
 	let query = {planid: planid};
 	let result = collection.findOne(query);
@@ -140,9 +178,13 @@ interface Subscription {
 class Subscription {
 	data:Subscription;
 	storeid:string;
-	constructor(data:Subscription, storeid:string) {
+	apiType:string;
+	currentCreatedDate:Date|null;
+	constructor(data:Subscription, storeid:string, apiType:string, currentCreatedDate:Date|null=null) {
 		this.data = data;
 		this.storeid = storeid;
+		this.apiType = apiType;
+		this.currentCreatedDate = currentCreatedDate;
 	}
 	generatingDocument() {
 		const data = this.data;
@@ -151,18 +193,27 @@ class Subscription {
 		if(error instanceof Error) {
 			return error;
 		}
-		if(data.createdDate) {
-			if(data.createdDate == null || data.createdDate == undefined) {
-				data.createdDate = new Date();
-				data.updatedDate = null;
-			} else {
-				data.createdDate = null;
-				data.updatedDate = new Date();
-			}
+		let tmpCreatedDate = data.createdDate;
+		if(this.apiType === "post") {
+			data.createdDate = new Date();
+			data.updatedDate = null;
+		}
+		if(this.apiType === "put") {
+			data.updatedDate = new Date();
+			data.createdDate = this.currentCreatedDate;
+		}
+		console.log(`this.createdDate: ${data.createdDate}`);
+		console.log(`tmpCreatedDate: ${tmpCreatedDate}`);
+
+		let tmpSubscriptionStatus:string = "";
+		tmpSubscriptionStatus = data.subscriptionstatus;
+		data.subscriptionstatus = "active";
+		if(tmpSubscriptionStatus === "freeze") {
+			data.subscriptionstatus = "freeze";
 		}
 
-		if(data.subscriptionstatus == null || data.subscriptionstatus == undefined) {
-			data.subscriptionstatus = "active";
+		if(tmpSubscriptionStatus === "cancel") {
+			data.subscriptionstatus = "inactive";
 		}
 
 		let document = {
@@ -189,6 +240,7 @@ class Subscription {
 		return document;
 
 	}
+
 
 	verifyFields(data:Subscription):boolean|Error {
 		switch(true) {
