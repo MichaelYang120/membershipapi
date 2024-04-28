@@ -1,6 +1,21 @@
 import express from 'express';
 import db from '../db/connection';
 import { ObjectId } from 'mongodb';
+import {
+	validate_name,
+	validate_email,
+	validate_phone,
+	validate_address,
+	validate_city,
+	validate_state,
+	validate_zip,
+	validate_credit_card,
+	validate_cctype,
+	validate_cvv,
+	validate_expiration,
+	validate_routingnumber,
+	validate_accountnumber
+} from '../helpers/subscription-validation';
 const router = express.Router();
 
 // headers should be set to storeid and storekey
@@ -212,7 +227,7 @@ class Subscription {
 	}
 	generatingDocument() {
 		const data = this.data;
-		let error:boolean|Error;
+		let error:boolean|Error = false;
 		error = this.verifyFields(data);
 		if(error instanceof Error) {
 			return error;
@@ -260,6 +275,11 @@ class Subscription {
 			createdDate: data.createdDate,
 			modifyDate: data.modifyDate,
 			subscriptionstatus: data.subscriptionstatus
+		}
+		error = this.validateValues(document);
+		console.log(`last error ${typeof(error)}`)
+		if(error instanceof Error) {
+			return error;
 		}
 		return document;
 
@@ -325,4 +345,67 @@ class Subscription {
 		}
 		return true;
 	}
+
+	validateValues(document:any):boolean|Error {
+		let error:boolean|Error = false;
+		error = validate_name(document.firstname);
+		if(error instanceof Error) {
+			return error; 
+		}
+		error = validate_name(document.lastname);
+		if(error instanceof Error) {
+			return error;
+		}
+		error = validate_phone(document.phone);
+		if(error instanceof Error) {
+			return error;
+		}
+		error = validate_email(document.email);
+		if(error instanceof Error) {
+			return error;
+		}
+		error = validate_address(document.address);
+		if(error instanceof Error) {
+			return error;
+		}
+		error = validate_city(document.city);
+		if(error instanceof Error) {
+			return error;
+		}
+		error = validate_state(document.state);
+		if(error instanceof Error) {
+			return error;
+		}
+		error = validate_zip(document.zip);
+		if(error instanceof Error) {
+			return error;
+		}
+		error = validate_credit_card(document.cc);
+		if(error instanceof Error) {
+			return error;
+		}
+		error = validate_cctype(document.cctype);
+		if(error instanceof Error) {
+			return error;
+		}
+		error = validate_cvv(document.ccv);
+		if(error instanceof Error) {
+			return error;
+		}
+		error = validate_expiration(document.exp);
+		if(error instanceof Error) {
+			return error;
+		}
+		error = validate_routingnumber(document.routingnumber);
+		if(error instanceof Error) {
+			return error;
+		}
+		error = validate_accountnumber(document.accountnumber);
+		if(error instanceof Error) {
+			return error;
+		}
+
+		return error;
+	}
+
 }
