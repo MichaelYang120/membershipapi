@@ -30,24 +30,24 @@ let debug = true;
 //--header 'storeid: 662c848b9276a793dc1eb4cd' \
 //--header 'storekey: admin' \
 //--header 'Content-Type: application/json' \
-//--data '{
+//--data-raw '{
+//    "planid":"662d7a4e3f0b6723376bec11",
 //    "firstname":"firstname",
 //    "lastname":"lastname",
-//    "phone":"phone",
-//    "email":"email",
+//    "phone":"6512344444",
+//    "email":"asdf@asdf.com",
 //    "address":"address",
 //    "city":"city",
-//    "state":"state",
-//    "zip":"zip",
-//    "cc":"cc",
-//    "cctype":"cctype",
-//    "ccv":"ccv",
-//    "exp":"exp",
-//    "routingnumber":"routingnumber",
-//    "accountnumber":"accountnumber",
-//    "subscriptionstatus":"subscriptionstatus"
+//    "state":"MN",
+//    "zip":"54555",
+//    "cc":"1111111111111111",
+//    "cctype":"Visa",
+//    "ccv":"344",
+//    "exp":"11/2025",
+//    "routingnumber":"000000000",
+//    "accountnumber":"0000000000",
+//    "subscriptionstatus":"freeze"
 //}'
-
 
 // there are no delete for this api as we want to keep records of who has been joining the subscription service, we can always cancel the subscription, or freeze it, but we want to keep the record of who has been a member of the subscription service and when they joined
 
@@ -88,27 +88,27 @@ router.post("/create", async (req, res) => {
 });
 
 // example of updating a subscription
-//curl --location --request PUT 'http://localhost:4000/subscription/update/662db0fb6862ae794afa9374' \
+//curl --location --request PUT 'http://localhost:4000/subscription/update/662ddb62f2d1229c405c1625' \
 //--header 'storeid: 662c848b9276a793dc1eb4cd' \
 //--header 'storekey: admin' \
 //--header 'Content-Type: application/json' \
-//--data '{
+//--data-raw '{
 //    "planid":"662d7a4e3f0b6723376bec11",
 //    "firstname":"firstname",
 //    "lastname":"lastname",
-//    "phone":"phone",
-//    "email":"email",
+//    "phone":"6512344444",
+//    "email":"asdf@asdf.com",
 //    "address":"address",
 //    "city":"city",
-//    "state":"state",
-//    "zip":"zip",
-//    "cc":"cc",
-//    "cctype":"cctype",
-//    "ccv":"ccv",
-//    "exp":"exp",
-//    "routingnumber":"routingnumber",
-//    "accountnumber":"accountnumber",
-//    "subscriptionstatus":"freeze"
+//    "state":"MN",
+//    "zip":"54555",
+//    "cc":"1111111111111111",
+//    "cctype":"Visa",
+//    "ccv":"344",
+//    "exp":"11/2025",
+//    "routingnumber":"000000000",
+//    "accountnumber":"0000000000",
+//    "subscriptionstatus":"active"
 //}'
 
 router.put("/update/:id", async (req, res) => {
@@ -241,8 +241,8 @@ class Subscription {
 			data.modifyDate = new Date();
 			data.createdDate = this.createDate;
 		}
-		console.log(`this.createdDate: ${data.createdDate}`);
-		console.log(`tmpCreatedDate: ${tmpCreatedDate}`);
+//		console.log(`this.createdDate: ${data.createdDate}`);
+//		console.log(`tmpCreatedDate: ${tmpCreatedDate}`);
 
 		let tmpSubscriptionStatus:string = "";
 		tmpSubscriptionStatus = data.subscriptionstatus;
@@ -277,7 +277,7 @@ class Subscription {
 			subscriptionstatus: data.subscriptionstatus
 		}
 		error = this.validateValues(document);
-		console.log(`last error ${typeof(error)}`)
+//		console.log(`last error ${typeof(error)}`)
 		if(error instanceof Error) {
 			return error;
 		}
