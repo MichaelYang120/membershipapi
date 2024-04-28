@@ -72,6 +72,30 @@ router.post("/create", async (req, res) => {
 	res.send(result).status(204);
 });
 
+// example of updating a subscription
+//curl --location --request PUT 'http://localhost:4000/subscription/update/662db0fb6862ae794afa9374' \
+//--header 'storeid: 662c848b9276a793dc1eb4cd' \
+//--header 'storekey: admin' \
+//--header 'Content-Type: application/json' \
+//--data '{
+//    "planid":"662d7a4e3f0b6723376bec11",
+//    "firstname":"firstname",
+//    "lastname":"lastname",
+//    "phone":"phone",
+//    "email":"email",
+//    "address":"address",
+//    "city":"city",
+//    "state":"state",
+//    "zip":"zip",
+//    "cc":"cc",
+//    "cctype":"cctype",
+//    "ccv":"ccv",
+//    "exp":"exp",
+//    "routingnumber":"routingnumber",
+//    "accountnumber":"accountnumber",
+//    "subscriptionstatus":"freeze"
+//}'
+
 router.put("/update/:id", async (req, res) => {
 	let error:boolean|Error = false;
 	let headers = req.headers;
@@ -103,9 +127,9 @@ router.put("/update/:id", async (req, res) => {
 	if(!currentDocument) {
 		return res.status(404).send("Document not found");
 	}
-	let currentCreatedDate:Date = currentDocument.createdDate;
+	let createdDate:Date = currentDocument.createdDate;
 
-	let newDocument = new Subscription(req.body, storeid, "put", currentCreatedDate).generatingDocument();
+	let newDocument = new Subscription(req.body, storeid, "put", createdDate).generatingDocument();
 	if(newDocument instanceof Error) {
 		if(debug) {
 			console.log(`Error: ${util.inspect(newDocument)}`);
@@ -171,7 +195,7 @@ interface Subscription {
 	routingnumber:string|null;
 	accountnumber:string|null;
 	createdDate:Date|null;
-	updatedDate:Date|null;
+	modifyDate:Date|null;
 	subscriptionstatus:string;
 }
 
@@ -179,12 +203,12 @@ class Subscription {
 	data:Subscription;
 	storeid:string;
 	apiType:string;
-	currentCreatedDate:Date|null;
-	constructor(data:Subscription, storeid:string, apiType:string, currentCreatedDate:Date|null=null) {
+	createDate:Date|null;
+	constructor(data:Subscription, storeid:string, apiType:string, createDate:Date|null=null) {
 		this.data = data;
 		this.storeid = storeid;
 		this.apiType = apiType;
-		this.currentCreatedDate = currentCreatedDate;
+		this.createDate = createDate;
 	}
 	generatingDocument() {
 		const data = this.data;
@@ -196,11 +220,11 @@ class Subscription {
 		let tmpCreatedDate = data.createdDate;
 		if(this.apiType === "post") {
 			data.createdDate = new Date();
-			data.updatedDate = null;
+			data.modifyDate = null;
 		}
 		if(this.apiType === "put") {
-			data.updatedDate = new Date();
-			data.createdDate = this.currentCreatedDate;
+			data.modifyDate = new Date();
+			data.createdDate = this.createDate;
 		}
 		console.log(`this.createdDate: ${data.createdDate}`);
 		console.log(`tmpCreatedDate: ${tmpCreatedDate}`);
@@ -234,7 +258,7 @@ class Subscription {
 			routingnumber: data.routingnumber,
 			accountnumber: data.accountnumber,
 			createdDate: data.createdDate,
-			updatedDate: data.updatedDate,
+			modifyDate: data.modifyDate,
 			subscriptionstatus: data.subscriptionstatus
 		}
 		return document;

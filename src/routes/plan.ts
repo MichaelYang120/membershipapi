@@ -116,6 +116,21 @@ router.delete('/:id', async (req, res) => {
 });
 
 // put, update a plan
+// example of curl call
+//curl --location --request PUT 'http://localhost:4000/plan/662d7a4e3f0b6723376bec11' \
+//--header 'membershipKey: admin' \
+//--header 'membershipId: 662c848b9276a793dc1eb4cd' \
+//--header 'Content-Type: application/json' \
+//--data '{
+//    "name": "test plan 1",
+//    "description": "test plan 1",
+//    "price": "data.price,",
+//    "storeid": "662c848b9276a793dc1eb4cd",
+//    "type": "recurring",
+//    "billingcycle": "monthly",
+//    "duedate": "0.00"
+//}'
+//
 router.put('/:id', async (req, res) => {
 	let headers = req.headers;
 	let error:boolean|Error = false;
@@ -131,12 +146,13 @@ router.put('/:id', async (req, res) => {
 	let collectionName:string = getCollectionName(storeid);
 	let collection = await db.collection(collectionName);
 	let query = {_id: new ObjectId(req.params.id)};
+	// get current document
+	let currentDocument = await collection.findOne(query);
 	if(req.body.createDate) {
 		delete req.body.createDate;
 	}
-	if(req.body.modifyDate) {
-		req.body.modifyDate = new Date();
-	}
+	// this should alway be updated if we are updating the document
+	req.body.modifyDate = new Date();
 	let updates = {
 		$set: req.body
 	};
