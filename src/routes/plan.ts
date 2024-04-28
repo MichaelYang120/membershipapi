@@ -19,7 +19,8 @@ const router = express.Router();
 //"billingcycle":"monthly",
 //"duedate":"0.00",
 //"createDate":"",
-//"modifyDate":""
+//"modifyDate":"",
+//"status":"active"
 //}'
 
 let debug = true;
@@ -148,6 +149,9 @@ router.put('/:id', async (req, res) => {
 	let query = {_id: new ObjectId(req.params.id)};
 	// get current document
 	let currentDocument = await collection.findOne(query);
+	if(!currentDocument) {
+		return res.status(404).send("Plan not found");
+	}
 	if(req.body.createDate) {
 		delete req.body.createDate;
 	}
@@ -202,6 +206,7 @@ interface Plan {
 	duedate: Date;
 	createDate: Date;
 	modifyDate: Date;
+	status: string;
 }
 
 class Plan {
@@ -235,7 +240,8 @@ class Plan {
 			billingcycle: data.billingcycle,
 			duedate: data.duedate,
 			createDate: new Date(),
-			modifyDate: ''
+			modifyDate: '',
+			status: data.status
 		}
 		if(!document) {
 			return new Error('Invalid document');
@@ -265,6 +271,9 @@ class Plan {
 		}
 		if(data.billingcycle !== 'monthly' && data.billingcycle !== 'yearly') {
 			return new Error('Invalid billingcycle');
+		}
+		if(data.status !== 'active' && data.status !== 'inactive') {
+			return new Error('Invalid status');
 		}
 		return false;
 	}
@@ -308,12 +317,13 @@ const verifyHeaders = (headers: any):boolean|Error => {
 
 const verifyStoreId = (storeid: string):boolean|Error => {
 	let collection = db.collection('membership_store');
-	console.log('storeid');
-	console.log(storeid);
+	if(debug) {
+		console.log('storeid');
+		console.log(storeid);
+	}
 	let query = {_id: new ObjectId(storeid)};
 	let result = collection.findOne(query);
 	if(!result) {
-		console.log('storeid not found');
 		return new Error('storeid not found');
 	}
 	return false;
